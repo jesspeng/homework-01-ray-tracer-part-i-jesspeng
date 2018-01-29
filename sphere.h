@@ -2,30 +2,23 @@
 #define SPHERE_H
 #include "QList"
 //#include "camera.h"
-//#include "intersection.h"
+#include "intersection.h"
+#include "ray.h"
+#include "shape.h"
+#include "globalincludes.h"
 
-class Sphere
+class Sphere : public Shape
 {
 public:
     Sphere();
-    //bool getIntersection(Ray ray, Intersection * intersect) const;
+    bool getIntersection(Ray ray, Intersection * intersect) const;
+    glm::mat4 getTransformMatrix() const;
+    float getT();
 
-//QList std::shared_ptr<const Primitive> primitives;
-//Camera cam;
+    glm::mat4 transform_matrix;
+    glm::vec3 origin;
+    float radius;
+    float t;
 };
-/*public:
-    Sphere(QString name, glm::mat4 transform_mat, Material material, QString type);
-    ~Sphere();
-
-    Intersection getIntersection(ray inputRay);
-
-    glm::mat4 computeTextureToObjectMatrix();
-
-//    Material getMaterial();
-private:
-   // glm::mat4 transform_mat;
-   // QString name;
-   // Material material;
-};*/
 
 #endif // SPHERE_H

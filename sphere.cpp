@@ -1,106 +1,83 @@
 #include "sphere.h"
+#include "globalincludes.h"
 
-Sphere::Sphere()
+Sphere::Sphere() : Shape()
 {
-
+//The Sphere should have a radius of 0.5 and should be centered at the origin.
+this->origin = glm::vec3(0, 0, 0);
+this->radius = 0.5;
 }
-/*
- * Sphere::Sphere(QString name, glm::mat4 transform_mat, Material material, QString type) : Geometry()
+
+glm::mat4 Sphere::getTransformMatrix() const
 {
-    //this->transform_mat = transform_mat;
-    this->setMat(transform_mat);
-    //this->name = name;
-    //this->material = material;
-    this->setMaterial(material);
-    this->setName(name);
-    this->setType(type);
-}
-Sphere::~Sphere() {
-//    delete material;
+    return this->transform_matrix;
 }
 
-//Material Sphere::getMaterial() {
-//    return this->material;
-//}
+float Sphere::getT()
+{
+    return this->t;
+}
 
-Intersection Sphere::getIntersection(ray inputRay) {
-    //The Sphere should have a radius of 0.5 and should be centered at the origin.
-    //center = (0, 0, 0)
-    //radius = .5
+bool Sphere::getIntersection(Ray ray, Intersection *intersect) const {
     float t;
-    glm::vec4 p;
-    glm::vec4 normal;
-    glm::mat4 invMat = glm::inverse(*this->getTransformMat());
-    ray transformedRay = inputRay.getTransformedCopy(invMat);
+    Point3f p;
+    Normal3f normal;
+    glm::mat4 inverseMatrix = glm::inverse(this->getTransformMatrix());
+    glm::vec4 new_origin = (glm::vec4) (ray.origin, 0) * inverseMatrix;
+    glm::vec4 new_direction = (glm::vec4) (ray.direction, 0) * inverseMatrix;
+    Ray *transformedRay = new Ray((Point3f) new_origin, (Vector3f) new_direction);
 
-    float x0 = transformedRay.getOrigin()[0];
-    float y0 = transformedRay.getOrigin()[1];
-    float z0 = transformedRay.getOrigin()[2];
+    float x0 = transformedRay->origin[0];
+    float y0 = transformedRay->origin[1];
+    float z0 = transformedRay->origin[2];
 
-    float xd = transformedRay.getDirection()[0];
-    float yd = transformedRay.getDirection()[1];
-    float zd = transformedRay.getDirection()[2];
+    float xd = transformedRay->direction[0];
+    float yd = transformedRay->direction[1];
+    float zd = transformedRay->direction[2];
 
+    float A = pow(xd, 2.0) + pow(yd, 2.0) + pow(zd, 2.0);
+    float B = 2 * (xd*x0 + yd*y0 + zd*z0);
+    float C = pow(x0, 2.0) + pow(y0, 2.0) + pow(z0, 2.0) - 0.25;
 
-    float a = pow(xd, 2.0) + pow(yd, 2.0) + pow(zd, 2.0);
-    float b = 2 * (xd*x0 + yd*y0 + zd*z0);
-    float c = pow(x0, 2.0) + pow(y0, 2.0) + pow(z0, 2.0) - .25;
-
-    float disc = pow(b, 2.0) - (4.0 * a * c);
-    if (disc < 0) {
-        return Intersection(glm::vec4(0, 0, 0, 0), glm::vec4(0, 0, 0, 0), -1, this);
-    }
-    else {
-        float t0 = ((b * -1.0) - (sqrtf(disc)))/(2 * a);
-        float t1 = ((b * -1.0) + (sqrtf(disc)))/(2 * a);
+    float discriminant = pow(B, 2.0) - (4.0 * A * C);
+    if (discriminant < 0) { // discriminant is negative and there is no intersection
+        Point3f zeroPoint = Point3f(0, 0, 0);
+        Normal3f zeroNormal = Normal3f(0, 0, 0);
+        intersect->normal = zeroNormal;
+        intersect->point = zeroPoint;
+        intersect->t = -1.0;
+        //intersect->objectHit
+        //*intersect= new Intersection(noPoint, noNormal, -1.0, this);
+        return false;
+    } else {
+        float t0 = ((B * -1.0) - (sqrtf(discriminant)))/(2 * A);
+        float t1 = ((B * -1.0) + (sqrtf(discriminant)))/(2 * A);
 
         if (t0 > 0) {
-            //check which is smaller
             if (t0 < t1) {
                 t = t0;
-            }
-            else {
+                //this->t = t0;
+            } else {
                 t = t1;
+                //this->t = t1;
             }
-        }
-        else {
-            //use t1
+        } else {
             t = t1;
+           //this->t = t1;
         }
-        p = transformedRay.getOrigin() + (t * transformedRay.getDirection());
-        normal = glm::normalize(p);
-        normal[3]=0;
-        glm::mat4 inverse = glm::inverse(*this->getTransformMat());
+
+        p = (transformedRay->origin) + (t * (transformedRay->direction));
+        normal = (Normal3f) glm::normalize(p);
+        glm::mat4 inverse = glm::inverse(this->getTransformMatrix());
         glm::mat4 inverse_transpose = glm::transpose(inverse);
 
-        p = inverse * p; //NOT TRANSPOSE
-        p[3] = 1;
-        normal = inverse_transpose * normal;
+        glm::vec4 temp_p = inverse * (glm::vec4) (p, 0);
+        glm::vec4 temp_normal = inverse_transpose * (glm::vec4) (normal, 0);
+        intersect->normal = (Normal3f) glm::normalize(temp_normal);
+        intersect->point = (Point3f) temp_p;
+        intersect->t = t;
+        //intersect->objectHit->surface = this;
+        //Intersection((Point3f) temp_p, (Normal3f) glm::normalize(temp_normal), t, this)
     }
-
-    return Intersection(p, glm::normalize(normal), t, this);
-
+    return true;
 }
-
-// compute matrix that transforms from texture space to object space
-// get normal, tangent, and bitangent
-glm::mat4 Sphere::computeTextureToObjectMatrix() {
-    //For all points except the very poles of our sphere, we can get the tangent by
-    // crossing <0,1,0> with our normal (remember to normalize the result)
-    glm::vec3 crossValue = glm::vec3(0, 1, 0);
-    glm::vec3 norm = glm::vec3(normal);
-    glm::vec3 tangent = glm::normalize(glm::cross(crossValue, norm)); //normalize result
-
-    // Get bitangent by crossing our normal with our tangent
-    glm::vec3 bitangent = glm::cross(norm, tangent);
-
-    // create transformation matrix
-    glm::vec4 column1 = glm::vec4(tangent[0], tangent[1], tangent[2], 0);
-    glm::vec4 column2 = glm::vec4(bitangent[0], bitangent[1], bitangent[2], 0);
-    glm::vec4 column3 = glm::vec4(norm[0], norm[1], norm[2], 0);
-    glm::vec4 column4 = glm::vec4(0, 0, 0, 1);
-
-    glm::mat4 matrix = glm::mat4(column1, column2, column3, column4);
-    return matrix;
-}
-*/

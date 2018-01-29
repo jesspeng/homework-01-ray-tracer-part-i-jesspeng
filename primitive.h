@@ -3,14 +3,16 @@
 #include "QString.h"
 #include "shape.h"
 class Intersection;
+class Ray;
 
 class Primitive
 {
 public:
-    Primitive();
-QString name;
-std::shared_ptr<const Shape> surface;
-bool getIntersection(Ray ray, Intersection *intersect) const;//implement this
+    Primitive(QString name, std::shared_ptr<Shape> surface);
+
+    QString name;
+    std::shared_ptr<Shape> surface;
+    bool getIntersection(Ray ray, Intersection *intersect) const;//implement this
 
 };
 

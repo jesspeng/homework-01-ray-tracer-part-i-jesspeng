@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "camera.h"
+#include "ray.h"
 #include <QImage>
 #include <QRgb>
 #include <QLabel>

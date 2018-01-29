@@ -2,16 +2,16 @@
 #define SHAPE_H
 #include "transform.h"
 #include "ray.h"
-#include "globalincludes.h"
 class Intersection;
 
 class Shape
 {
 public:
     Shape();
-    //virtual bool getIntersection(Ray ray, Intersection *intersect) const; // purely virtual
+    virtual bool getIntersection(Ray ray, Intersection *intersect) const; // purely virtual
     Shape(Transform transform);
-    virtual ~Shape();
+    ~Shape();
+
     Transform objTransform;
 };
 
